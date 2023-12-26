@@ -1,5 +1,5 @@
 # muse
-Muse is a simple python script for creating synthetic textbooks using Google's Gemini Pro API, which is currently providing free access at 60req/min.
+Muse is a simple python script for creating synthetic textbooks using Google's Gemini Pro API, which is currently providing free access at 60req/min. At current rates it generates about 1.2M synthetic tokens every 15 minutes.
 
 To get started, simply clone or download the repository to your local machine, enter the directory, and run `python3 -m pip install -r requirements.txt`. Open `index.py` and replace `GEMINI_API_KEY` with an API key obtained from https://makersuite.google.com/app/apikey.
 
