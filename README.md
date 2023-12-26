@@ -9,7 +9,7 @@ Muse is a simple python script for creating synthetic textbooks using Google's G
 4. Open `index.py` and replace `GEMINI_API_KEY` with an API key obtained from https://makersuite.google.com/app/apikey.
 5. Make a directory named textbooks. `mkdir textbooks`
 6. On huggingface, go to https://huggingface.co/new-dataset and create a new dataset named `muse_textbooks`
-7. Go to https://huggingface.co/settings/tokens to get your current access token (API key) or create a new one
+7. Go to https://huggingface.co/settings/tokens to get your current access token (API key) or create a new one with write permissions
 8. Run `python3 index.py`, you'll be prompted to enter in your HuggingFace API key. 
 9. And that's it! The code will submit 60 requests/minute to Google's Gemini Pro. The script will generate textbooks in the `./textbooks` directory and auto-upload them to a HuggingFace dataset named `your_username/muse_textbooks`.
 
