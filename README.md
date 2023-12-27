@@ -15,6 +15,8 @@ Muse is a Python script for creating synthetic textbooks using Google's Gemini P
 
 The script submits 60 requests/minute to Google's Gemini Pro, generating textbooks in the specified (`out_dir`) directory and auto-uploading them to a Hugging Face dataset named `your_username/muse_textbooks`.
 
+**Note**: Configuration values can be specified either in the config.ini file or passed as environment variables. It is advisable to avoid setting arbitrary values for temperature and top_p.
+
 ### Nix/Nixos
 
 Run: `nix-shell` inside the muse directory. Then follow instructions from the above-mentioned step 5.
