@@ -64,7 +64,7 @@ let
 
       pip install -r requirements.txt
 
-      python index.py
+      python main.py
     '';
   };
 in
