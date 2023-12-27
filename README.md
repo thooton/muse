@@ -27,7 +27,10 @@ By creating large amounts of open-source synthetic textbook data, we pave the wa
 
 ## How it works
 
-The script auto-generates prompts by sampling from two seed datasets defined by the `TEXT_DATASET` and `CODE_DATASET` variables in `main.py`. After a passage is sampled, it is passed to one of three prompt templates defined by `TEMPLATES` that instruct the LLM to either 1) generate a two-person debate on a subject related to the passage, 2) generate an informative lecture on a subject related to the passage, or 3) generate a computer science textbook section on a subject related to the passage. All of this can be tweaked by editing `main.py`.
+The program auto-generates prompts by sampling from two seed datasets defined by the `TEXT_DATASET` and `CODE_DATASET` variables in `data_processing.py`. After a passage is sampled, it is passed to one of three prompt templates defined by `TEMPLATES` that instruct the LLM to either:
+1) Generate a two-person debate on a subject related to the passage, or
+2) Generate an informative lecture on a subject related to the passage, or
+3) Generate a computer science textbook section on a subject related to the passage.
 
 ## Contributing
 
