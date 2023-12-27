@@ -56,34 +56,36 @@ def read_config():
 API_KEY, API_ENDPOINT, TEMPERATURE, TOP_P, OUT_DIR, COUNT_PER_FILE = read_config()
 
 
+def process_text_dataset(item):
+    return "\n\n".join(
+        [
+            {"human": "Human: ", "gpt": "Assistant: "}[entry["from"]] + entry["value"]
+            for entry in item["conversations"]
+        ]
+    ).strip()
+
+
+def process_code_dataset(item):
+    return (
+        "Request: "
+        + item["instruction"].strip()
+        + "\n\nCode: "
+        + item["output"].strip()
+    )
+
+
 TEXT_DATASET = {
     "id": "WizardLM/WizardLM_evol_instruct_V2_196k",
     "split": "train",
-    "iter": lambda dataset: map(
-        lambda item: "\n\n".join(
-            [
-                {"human": "Human: ", "gpt": "Assistant: "}[entry["from"]]
-                + entry["value"]
-                for entry in item["conversations"]
-            ]
-        ).strip(),
-        dataset,
-    ),
+    "iter": lambda dataset: map(process_text_dataset, dataset),
 }
 
 CODE_DATASET = {
     "id": "TokenBender/code_instructions_122k_alpaca_style",
     "split": "train",
-    "iter": lambda dataset: map(
-        lambda item: (
-            "Request: "
-            + item["instruction"].strip()
-            + "\n\nCode: "
-            + item["output"].strip()
-        ),
-        dataset,
-    ),
+    "iter": lambda dataset: map(process_code_dataset, dataset),
 }
+
 
 TEMPLATES = [
     {
