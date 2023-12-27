@@ -23,6 +23,9 @@ TOP_P = float(os.getenv("TOP_P", 0.99))
 OUT_DIR = os.getenv("OUT_DIR", "./textbooks")
 COUNT_PER_FILE = int(os.getenv("COUNT_PER_FILE", 1000))
 
+if not os.path.exists(OUT_DIR):
+    os.makedirs(OUT_DIR)
+
 if config_file_exists and "" in (API_KEY, API_ENDPOINT):
     config.read("config.ini")
     API_KEY = config.get("Gemini", "API_KEY", fallback="")
