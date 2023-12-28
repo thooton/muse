@@ -1,4 +1,4 @@
-# About
+# muse
 
 Muse is a Python script for creating synthetic textbooks using Google's Gemini Pro API, providing free access at 60 req/min. On average, each request generates ~1000 tokens, resulting in 3.6 million tokens per participant per hour!
 
