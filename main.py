@@ -58,6 +58,9 @@ async def main():
                 tqdm.write(f"failed: {exc}")
                 continue
 
+            if len(result) == 0:
+                continue
+
             outfile.write((json.dumps({"text": result}) + "\n").encode("utf-8"))
             lines += 1
             pbar.update(1)
