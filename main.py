@@ -36,11 +36,10 @@ async def main():
     outfile = open(os.path.join(OUT_DIR, "cur.jsonl"), "ab")
 
     while True:
-        template = TEMPLATES[secrets.randbits(64) % len(TEMPLATES)]
-        dataset_type = "text" if template["dataset"] == "text" else "code"
-        passage = next(text_iter) if dataset_type == "text" else next(code_iter)
-
         for api_key in API_KEYS:
+            template = TEMPLATES[secrets.randbits(64) % len(TEMPLATES)]
+            dataset_type = "text" if template["dataset"] == "text" else "code"
+            passage = next(text_iter) if dataset_type == "text" else next(code_iter)
             tasks.add(asyncio.create_task(llm_template_query(
                 sess, template, passage, api_key
             )))
