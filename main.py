@@ -5,9 +5,17 @@ import asyncio
 import secrets
 import json
 import huggingface_hub
-from config import API_KEYS, OUT_DIR, COUNT_PER_FILE
+from config import API_KEYS, OUT_DIR, COUNT_PER_FILE, BEGIN_INDEX, VERBOSE_EXCEPTIONS
 from data_processing import TEXT_DATASET, CODE_DATASET, TEMPLATES, load_iter_from_spec
 from llm_queries import llm_template_query
+import traceback
+
+
+def exc_fmt(exc):
+    if VERBOSE_EXCEPTIONS:
+        return "\n".join(traceback.format_exception(exc)).strip()
+    else:
+        return str(repr(exc))
 
 
 async def main():
@@ -40,9 +48,11 @@ async def main():
             template = TEMPLATES[secrets.randbits(64) % len(TEMPLATES)]
             dataset_type = "text" if template["dataset"] == "text" else "code"
             passage = next(text_iter) if dataset_type == "text" else next(code_iter)
-            tasks.add(asyncio.create_task(llm_template_query(
-                sess, template, passage, api_key
-            )))
+            tasks.add(
+                asyncio.create_task(
+                    llm_template_query(sess, template, passage, api_key)
+                )
+            )
 
         new_tasks = set()
 
@@ -52,9 +62,15 @@ async def main():
                 continue
 
             try:
-                result = task.result()
+                status, result = task.result()
             except Exception as exc:
-                tqdm.write(f"failed: {exc}")
+                tqdm.write(f"unknown error: {exc_fmt(exc)}")
+                continue
+
+            if status == "err":
+                api_key = result["api_key"]
+                exc = result["exc"]
+                tqdm.write(f"error in {api_key}: {exc_fmt(exc)}")
                 continue
 
             if len(result) == 0:
@@ -68,7 +84,7 @@ async def main():
 
         if lines >= COUNT_PER_FILE:
             outfile.close()
-            i = 0
+            i = BEGIN_INDEX
 
             while os.path.exists(os.path.join(OUT_DIR, f"{i}.jsonl")):
                 i += 1
@@ -87,7 +103,7 @@ async def main():
                     )
                     break
                 except Exception as exc:
-                    tqdm.write(f"can't upload: {exc}")
+                    tqdm.write(f"can't upload: {exc_fmt(exc)}")
                     await asyncio.sleep(1)
 
             outfile = open(os.path.join(OUT_DIR, "cur.jsonl"), "ab")

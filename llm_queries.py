@@ -15,6 +15,9 @@ async def llm_query(sess, query, api_key):
 
 
 async def llm_template_query(sess, template, passage, api_key):
-    query = template["prompt"](passage).strip()
-    response = await llm_query(sess, query, api_key)
-    return template["extract"](response)
+    try:
+        query = template["prompt"](passage).strip()
+        response = await llm_query(sess, query, api_key)
+        return ("ok", template["extract"](response))
+    except Exception as exc:
+        return ("err", {"exc": exc, "api_key": api_key})
