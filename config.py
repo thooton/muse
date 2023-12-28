@@ -1,6 +1,6 @@
 import os
 import configparser
-
+import json
 
 def load_configuration():
     CONFIG_FILE = "config.ini"
@@ -9,41 +9,15 @@ def load_configuration():
 
     config_file_exists = os.path.exists(CONFIG_FILE)
 
-    API_KEY = os.getenv("API_KEY", "")
-    API_ENDPOINT = os.getenv(
-        "API_ENDPOINT",
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=",
-    )
-    TEMPERATURE = float(os.getenv("TEMPERATURE", 1.0))
-    TOP_P = float(os.getenv("TOP_P", 0.99))
-    OUT_DIR = os.getenv("OUT_DIR", "./textbooks")
-    COUNT_PER_FILE = int(os.getenv("COUNT_PER_FILE", 1000))
-
-    if not os.path.exists(OUT_DIR):
-        os.makedirs(OUT_DIR)
-
-    if config_file_exists and "" in (API_KEY, API_ENDPOINT):
-        config.read("config.ini")
-        API_KEY = config.get("Gemini", "API_KEY", fallback="")
-        API_ENDPOINT = config.get(
-            "Gemini",
-            "API_ENDPOINT",
-            fallback="https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=",
-        )
-
-        if API_KEY == "":
-            print("API key is empty. Please update config.ini with your API key.")
-            exit(1)
-
-    else:
+    if not config_file_exists:
         config["Gemini"] = {
-            "API_KEY": API_KEY,
-            "API_ENDPOINT": API_ENDPOINT,
+            "API_KEYS": "[]",
+            "API_ENDPOINT": "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=",
         }
-        config["Parameters"] = {"TEMPERATURE": str(TEMPERATURE), "TOP_P": str(TOP_P)}
+        config["Parameters"] = {"TEMPERATURE": "1.0", "TOP_P": "0.99"}
         config["Misc"] = {
-            "OUT_DIR": OUT_DIR,
-            "COUNT_PER_FILE": str(COUNT_PER_FILE),
+            "OUT_DIR": "./textbooks",
+            "COUNT_PER_FILE": "1000",
         }
         with open("config.ini", "w") as configfile:
             config.write(configfile)
@@ -53,11 +27,33 @@ def load_configuration():
         )
         exit(1)
 
-    return API_KEY, API_ENDPOINT, TEMPERATURE, TOP_P, OUT_DIR, COUNT_PER_FILE
+    config.read("config.ini")
+    API_KEYS = json.loads(config.get("Gemini", "API_KEYS", fallback="[]"))
+    API_ENDPOINT = config.get("Gemini", "API_ENDPOINT", fallback="")
+    TEMPERATURE = float(config.get("Parameters", "TEMPERATURE", fallback="0.0"))
+    TOP_P = float(config.get("Parameters", "TOP_P", fallback="0.0"))
+    OUT_DIR = config.get("Misc", "OUT_DIR", fallback="")
+    COUNT_PER_FILE = int(config.get("Misc", "COUNT_PER_FILE", fallback="0"))
+
+    API_KEYS = os.getenv("API_KEYS", ";".join(API_KEYS)).split(";")
+    API_ENDPOINT = os.getenv("API_ENDPOINT", API_ENDPOINT)
+    TEMPERATURE = float(os.getenv("TEMPERATURE", TEMPERATURE))
+    TOP_P = float(os.getenv("TOP_P", TOP_P))
+    OUT_DIR = os.getenv("OUT_DIR", OUT_DIR)
+    COUNT_PER_FILE = int(os.getenv("COUNT_PER_FILE", COUNT_PER_FILE))
+
+    if len(API_KEYS) == 0:
+        print("API keys are empty. Please update config.ini with one or more API keys.")
+        exit(1)
+
+    if not os.path.exists(OUT_DIR):
+        os.makedirs(OUT_DIR)
+
+    return API_KEYS, API_ENDPOINT, TEMPERATURE, TOP_P, OUT_DIR, COUNT_PER_FILE
 
 
 (
-    API_KEY,
+    API_KEYS,
     API_ENDPOINT,
     TEMPERATURE,
     TOP_P,

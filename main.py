@@ -5,7 +5,7 @@ import asyncio
 import secrets
 import json
 import huggingface_hub
-from config import OUT_DIR, COUNT_PER_FILE
+from config import API_KEYS, OUT_DIR, COUNT_PER_FILE
 from data_processing import TEXT_DATASET, CODE_DATASET, TEMPLATES, load_iter_from_spec
 from llm_queries import llm_template_query
 
@@ -40,7 +40,10 @@ async def main():
         dataset_type = "text" if template["dataset"] == "text" else "code"
         passage = next(text_iter) if dataset_type == "text" else next(code_iter)
 
-        tasks.add(asyncio.create_task(llm_template_query(sess, template, passage)))
+        for api_key in API_KEYS:
+            tasks.add(asyncio.create_task(llm_template_query(
+                sess, template, passage, api_key
+            )))
 
         new_tasks = set()
 
