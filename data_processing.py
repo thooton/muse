@@ -53,7 +53,7 @@ The debate topic will belong to the same domain as the content of the passage, b
 The debate topic generated will be philosophical, creative, interesting, engaging, and thought-provoking.
 The debate topic generated will not have an easy answer; it will be able to be argued from both sides.
 The topic will be surrounded by <topic></topic> tags.
-2) Generate a debate on the generated topic between two rational individuals, Phi and Epsilon.
+2) Generate a debate on the generated topic between two rational individuals, Aspen and River.
 In the debate, the participants will hold mutually opposing views.
 The debate will be long and drawn-out; no side will give up easily.
 In the debate, at times the participants may make concessions, but still hold fast to their point of view.
