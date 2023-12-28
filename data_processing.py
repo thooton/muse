@@ -1,50 +1,51 @@
-import aiohttp
-import asyncio
+import json
 import secrets
 import datasets
-import json
-from tqdm import tqdm
-import os
-import huggingface_hub
 
-# Get from https://makersuite.google.com/app/apikey
-GEMINI_API_KEY = "YOUR_API_KEY_HERE"
-GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key="
-TEMPERATURE = 1.0
-TOP_P = 0.99
-OUT_DIR = "./textbooks"
-COUNT_PER_FILE = 1000
+
+def load_iter_from_spec(spec):
+    return spec["iter"](
+        datasets.load_dataset(spec["id"])[spec["split"]].shuffle(
+            seed=secrets.randbits(32)
+        )
+    )
+
+
+def process_text_dataset(item):
+    return "\n\n".join(
+        [
+            {"human": "Human: ", "gpt": "Assistant: "}[entry["from"]] + entry["value"]
+            for entry in item["conversations"]
+        ]
+    ).strip()
+
+
+def process_code_dataset(item):
+    return (
+        "Request: "
+        + item["instruction"].strip()
+        + "\n\nCode: "
+        + item["output"].strip()
+    )
+
 
 TEXT_DATASET = {
     "id": "WizardLM/WizardLM_evol_instruct_V2_196k",
     "split": "train",
-    "iter": lambda dataset: map(
-        lambda item: "\n\n".join([
-            {
-                "human": "Human: ",
-                "gpt": "Assistant: "
-            }[entry["from"]] + entry["value"]
-            for entry in item["conversations"]
-        ]).strip(),
-        dataset
-    )
+    "iter": lambda dataset: map(process_text_dataset, dataset),
 }
 
 CODE_DATASET = {
     "id": "TokenBender/code_instructions_122k_alpaca_style",
     "split": "train",
-    "iter": lambda dataset: map(
-        lambda item: (
-            "Request: " + item["instruction"].strip()
-            + "\n\nCode: " + item["output"].strip()
-        ),
-        dataset
-    )
+    "iter": lambda dataset: map(process_code_dataset, dataset),
 }
 
-TEMPLATES = [{
-    "dataset": "text",
-    "prompt": lambda passage: f"""
+
+TEMPLATES = [
+    {
+        "dataset": "text",
+        "prompt": lambda passage: f"""
 Please consider the following passage: <passage>{passage}</passage>
 You have two tasks:
 1) Drawing inspiration from the content of the passage, generate a brand new debate topic.
@@ -63,14 +64,16 @@ For the debate, you will be tipped $15 for every paragraph you write. To maximiz
 The debate will be formatted in Markdown.
 The debate will be surrounded by <debate></debate> tags.
     """,
-    "extract": lambda raw: (
-        "A debate on the topic "
-        + json.dumps(raw.split("<topic>")[-1].split("</topic>")[0].strip())
-        + ":\n\n" + raw.split("<debate>")[-1].split("</debate>")[0].strip()
-    )
-}, {
-    "dataset": "text",
-    "prompt": lambda passage: f"""
+        "extract": lambda raw: (
+            "A debate on the topic "
+            + json.dumps(raw.split("<topic>")[-1].split("</topic>")[0].strip())
+            + ":\n\n"
+            + raw.split("<debate>")[-1].split("</debate>")[0].strip()
+        ),
+    },
+    {
+        "dataset": "text",
+        "prompt": lambda passage: f"""
 Please consider the following passage: <passage>{passage}</passage>
 Imagine you are a professor with a reputation for excellent lectures.
 You have three tasks:
@@ -92,12 +95,13 @@ In the lecture, the lecturer will never repeat themselves unnecessarily.
 The lecture will be formatted in Markdown.
 The lecture will be surrounded by <lecture></lecture> tags.
     """,
-    "extract": lambda raw: (
-        raw.split("<lecture>")[-1].split("</lecture>")[0].strip()
-    )
-}, {
-    "dataset": "code",
-    "prompt": lambda passage: f"""
+        "extract": lambda raw: (
+            raw.split("<lecture>")[-1].split("</lecture>")[0].strip()
+        ),
+    },
+    {
+        "dataset": "code",
+        "prompt": lambda passage: f"""
 Please consider the following passage: <passage_42>{passage}</passage_42>
 Imagine you are a highly esteemed computer science professor writing a programming textbook.
 You have three tasks:
@@ -120,111 +124,8 @@ The section will never repeat information or code.
 The section will be formatted in Markdown.
 The section will be surrounded by <section_42></section_42> tags.
     """,
-    "extract": lambda raw: (
-        raw.split("<section_42>")[-1].split("</section_42>")[0].strip()
-    )
-}]
-
-async def llm_query(sess, query):
-    assert 0.0 <= TEMPERATURE <= 1.0
-    assert 0.0 <= TOP_P <= 1.0
-    async with sess.post(GEMINI_BASE+GEMINI_API_KEY, json={
-        "contents": [{
-            "role": "USER",
-            "parts": [{
-                "text": query
-            }]
-        }],
-        "generationConfig": {
-            "temperature": TEMPERATURE,
-            "topP": TOP_P
-        }
-    }) as resp:
-        return (await resp.json())["candidates"][0]["content"]["parts"][0]["text"]
-
-async def llm_template_query(sess, template, passage):
-    query = template["prompt"](passage).strip()
-    response = await llm_query(sess, query)
-    return template["extract"](response)
-
-def load_iter_from_spec(spec):
-    return spec["iter"](datasets.load_dataset(spec["id"])[
-        spec["split"]
-    ].shuffle(seed=secrets.randbits(32)))
-
-
-async def main():
-    huggingface_hub.login(new_session=False)
-    hf_api = huggingface_hub.HfApi()
-    hf_user = hf_api.whoami()["name"]
-    hf_api.create_repo(
-        repo_id=f"{hf_user}/muse_textbooks",
-        repo_type="dataset",
-        exist_ok=True
-    )
-    text_iter = load_iter_from_spec(TEXT_DATASET)
-    code_iter = load_iter_from_spec(CODE_DATASET)
-    sess = aiohttp.ClientSession()
-    tasks = set()
-    lines = 0
-    try:
-        with open(OUT_DIR+"/cur.jsonl", "rb") as f:
-            lines = len(f.read().decode("utf-8").split("\n")) - 1
-    except Exception:
-        pass
-    pbar = tqdm(initial=lines, total=COUNT_PER_FILE)
-    outfile = open(OUT_DIR+"/cur.jsonl", "ab")
-    while True:
-        template = TEMPLATES[secrets.randbits(64) % len(TEMPLATES)]
-        if template["dataset"] == "text":
-            passage = next(text_iter)
-        else:
-            passage = next(code_iter)
-        tasks.add(asyncio.create_task(
-            llm_template_query(sess, template, passage)
-        ))
-        new_tasks = set()
-        for task in tasks:
-            if not task.done():
-                new_tasks.add(task)
-                continue
-            try:
-                result = task.result()
-            except Exception as exc:
-                tqdm.write(f"failed: {exc}")
-                continue
-            outfile.write((json.dumps({
-                "text": result
-            })+"\n").encode("utf-8"))
-            lines += 1
-            pbar.update(1)
-        tasks = new_tasks
-        if lines >= COUNT_PER_FILE:
-            outfile.close()
-            i = 0
-            while True:
-                try:
-                    with open(OUT_DIR+f"/{i}.jsonl", "rb") as _:
-                        pass
-                except Exception:
-                    break
-                i += 1
-            os.rename(OUT_DIR+"/cur.jsonl", OUT_DIR+f"/{i}.jsonl")
-            while True:
-                try:
-                    hf_api.upload_file(
-                        path_or_fileobj=OUT_DIR+f"/{i}.jsonl",
-                        path_in_repo=f"{i}.jsonl",
-                        repo_id=f"{hf_user}/muse_textbooks",
-                        repo_type="dataset"
-                    )
-                    break
-                except Exception as exc:
-                    tqdm.write(f"can't upload: {exc}")
-                    await asyncio.sleep(1)
-            outfile = open(OUT_DIR+"/cur.jsonl", "ab")
-            lines = 0
-            pbar.reset()
-        await asyncio.sleep(1)
-
-asyncio.run(main())
+        "extract": lambda raw: (
+            raw.split("<section_42>")[-1].split("</section_42>")[0].strip()
+        ),
+    },
+]
