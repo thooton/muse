@@ -27,8 +27,8 @@ async def main():
 
     hf_api.create_repo(repo_id=repo_id, repo_type="dataset", exist_ok=True)
 
-    text_iter = load_iter_from_spec(TEXT_DATASET)
-    code_iter = load_iter_from_spec(CODE_DATASET)
+    text_iter = iter([])
+    code_iter = iter([])
     sess = aiohttp.ClientSession()
 
     tasks = set()
@@ -47,7 +47,13 @@ async def main():
         for api_key in API_KEYS:
             template = TEMPLATES[secrets.randbits(64) % len(TEMPLATES)]
             dataset_type = "text" if template["dataset"] == "text" else "code"
-            passage = next(text_iter) if dataset_type == "text" else next(code_iter)
+            while True:
+                try:
+                    passage = next(text_iter) if dataset_type == "text" else next(code_iter)
+                    break
+                except Exception:
+                    text_iter = load_iter_from_spec(TEXT_DATASET)
+                    code_iter = load_iter_from_spec(CODE_DATASET)
             tasks.add(
                 asyncio.create_task(
                     llm_template_query(sess, template, passage, api_key)
