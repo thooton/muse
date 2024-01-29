@@ -141,9 +141,8 @@ You have three tasks:
 This topic should delve into rarely discussed aspects such as the intersection of art and technology, the ethical implications of art in political movements, or the evolution of artistic styles in response to global crises.
 The topic should challenge conventional thinking and be open to interpretation from multiple perspectives.
 Enclose the debate topic in <topic></topic> tags.
-2) Construct a detailed debate scenario between two fictional art historians, Leonardo and Michelangelo, with opposing views.
-Leonardo advocates for the preservation and respect of traditional artistic methods, while Michelangelo champions the innovative and disruptive potential of contemporary art.
-The debate must be rich in historical references, theoretical arguments, and hypothetical scenarios, spanning at least 70 exchanges to ensure a comprehensive exploration of the topic.
+2) Construct a detailed debate scenario between many fictional characters. 
+For each character choose a name and an archetype such as a critic, artist, curator, collector, art historian, student, journalist, or layperson
 Enclose the debate in <debate></debate> tags.
 3) In addition to the debate, provide a post-debate analysis from a neutral perspective, examining the strengths and weaknesses of each argument, and speculating on the future implications of the debate topic in the art world.
 This analysis should be formatted in Markdown and enclosed in <analysis></analysis> tags.
