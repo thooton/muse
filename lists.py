@@ -1054,7 +1054,7 @@ unique_art_types = [
 ]
 
 professional_art_types = [
-    "Graphic Design
+    "Graphic Design",
     "Web Design",
     "User Interface (UI) Design",
     "User Experience (UX) Design",
@@ -1266,7 +1266,7 @@ science_fields = [
 ]
 
 more_science_fields = [
-    "Lattice QCD (Quantum Chromodynamics)
+    "Lattice QCD (Quantum Chromodynamics)",
     "Fluid-Particle Interaction Modeling",
     "Hyperbolic Partial Differential Equations",
     "Cryogenic Engineering",
@@ -1365,7 +1365,7 @@ more_science_fields = [
     "Algebraic Geometry in Cryptography",
     "Chemical Process Hazard Analysis",
     "Quantum Materials Synthesis Techniques",
-    "Structural Engineering Rehabilitation"",
+    "Structural Engineering Rehabilitation",
 ]
 
 # Art

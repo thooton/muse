@@ -11,7 +11,9 @@ async def llm_query(sess, query, api_key):
             "generationConfig": {"temperature": TEMPERATURE, "topP": TOP_P},
         },
     ) as resp:
-        return (await resp.json())["candidates"][0]["content"]["parts"][0]["text"]
+        json_resp = await resp.json()
+
+        return json_resp["candidates"][0]["content"]["parts"][0]["text"]
 
 
 async def llm_template_query(sess, template, passage, api_key):

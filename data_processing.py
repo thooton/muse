@@ -358,8 +358,8 @@ TEMPLATE_GROUPS = {
     "textbooks": (
         TEMPLATES,
         {
-            "text": load_iter_from_spec(TEXT_DATASET),
-            "code": load_iter_from_spec(CODE_DATASET),
+            "text": lambda: load_iter_from_spec(TEXT_DATASET),
+            "code": lambda: load_iter_from_spec(CODE_DATASET),
         },
     ),
     "art": (
@@ -367,7 +367,7 @@ TEMPLATE_GROUPS = {
         {
             "art_debate": lists.all_art_fields + lists.all_artworks,
             "creativity_lesson": lists.all_art_fields,
-            "art_critique": lists.all_art_fields + list.all_artworks,
+            "art_critique": lists.all_art_fields + lists.all_artworks,
         },
     ),
     "science": (

@@ -39,9 +39,15 @@ async def main():
     hf_api.create_repo(repo_id=repo_id, repo_type="dataset", exist_ok=True)
 
     # Iterate over each key, if it is a list make it iter otherwise skip
-    dataset_map = {
-        k: v if isinstance(v, list) else iter([v]) for k, v in dataset_map.items()
-    }
+    def load_dataset(value):
+        if callable(value):
+            return iter(value())
+        elif isinstance(value, list):
+            return iter(value)
+        else:
+            raise ValueError(f"invalid dataset type: {type(value)}")
+
+    dataset_map = {k: load_dataset(v) for k, v in dataset_map.items()}
 
     # Make each one inifinite loop
     import itertools
