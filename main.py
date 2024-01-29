@@ -15,10 +15,7 @@ from config import (
     TEMPLATE_NAME,
 )
 from data_processing import (
-    TEXT_DATASET,
-    CODE_DATASET,
     TEMPLATE_GROUPS,
-    load_iter_from_spec,
 )
 from llm_queries import llm_template_query
 import traceback

@@ -44,8 +44,12 @@ def load_configuration():
     VERBOSE_EXCEPTIONS = BOOL_TABLE[
         config.get("Misc", "VERBOSE_EXCEPTIONS", fallback="False")
     ]
-    DATASET_NAME = config.get("Misc", "DATASET_NAME", fallback="muse_textbooks")
-    TEMPLATE_NAME = config.get("Misc", "TEMPLATE_NAME", fallback="textbooks")
+    DATASET_NAME = config.get("Misc", "DATASET_NAME", fallback=None)
+    if DATASET_NAME is None:
+        raise ValueError("DATASET_NAME is not specified in the configuration.")
+    TEMPLATE_NAME = config.get("Misc", "TEMPLATE_NAME", fallback=None)
+    if TEMPLATE_NAME is None:
+        raise ValueError("TEMPLATE_NAME is not specified in the configuration.")
 
     API_KEYS = os.getenv("API_KEYS", ";".join(API_KEYS)).split(";")
     API_ENDPOINT = os.getenv("API_ENDPOINT", API_ENDPOINT)
