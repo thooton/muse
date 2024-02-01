@@ -5,8 +5,18 @@ import asyncio
 import secrets
 import json
 import huggingface_hub
-from config import API_KEYS, OUT_DIR, COUNT_PER_FILE, BEGIN_INDEX, VERBOSE_EXCEPTIONS
-from data_processing import TEXT_DATASET, CODE_DATASET, TEMPLATES, load_iter_from_spec
+from config import (
+    API_KEYS,
+    OUT_DIR,
+    COUNT_PER_FILE,
+    BEGIN_INDEX,
+    VERBOSE_EXCEPTIONS,
+    DATASET_NAME,
+    TEMPLATE_NAME,
+)
+from data_processing import (
+    TEMPLATE_GROUPS,
+)
 from llm_queries import llm_template_query
 import traceback
 
@@ -23,12 +33,27 @@ async def main():
     hf_api = huggingface_hub.HfApi()
 
     hf_user = hf_api.whoami()["name"]
-    repo_id = f"{hf_user}/muse_textbooks"
+    repo_id = f"{hf_user}/{DATASET_NAME}"
+    templates, dataset_map = TEMPLATE_GROUPS[TEMPLATE_NAME]
 
     hf_api.create_repo(repo_id=repo_id, repo_type="dataset", exist_ok=True)
 
-    text_iter = iter([])
-    code_iter = iter([])
+    # Iterate over each key, if it is a list make it iter otherwise skip
+    def load_dataset(value):
+        if callable(value):
+            return iter(value())
+        elif isinstance(value, list):
+            return iter(value)
+        else:
+            raise ValueError(f"invalid dataset type: {type(value)}")
+
+    dataset_map = {k: load_dataset(v) for k, v in dataset_map.items()}
+
+    # Make each one inifinite loop
+    import itertools
+
+    dataset_map = {k: itertools.cycle(v) for k, v in dataset_map.items()}
+
     sess = aiohttp.ClientSession()
 
     tasks = set()
@@ -45,15 +70,13 @@ async def main():
 
     while True:
         for api_key in API_KEYS:
-            template = TEMPLATES[secrets.randbits(64) % len(TEMPLATES)]
-            dataset_type = "text" if template["dataset"] == "text" else "code"
-            while True:
-                try:
-                    passage = next(text_iter) if dataset_type == "text" else next(code_iter)
-                    break
-                except Exception:
-                    text_iter = load_iter_from_spec(TEXT_DATASET)
-                    code_iter = load_iter_from_spec(CODE_DATASET)
+            # Get a random template
+            template = templates[secrets.randbits(64) % len(templates)]
+
+            # Get the required input for the template
+            dataset_type = template["dataset"]
+            passage = next(dataset_map[dataset_type])
+
             tasks.add(
                 asyncio.create_task(
                     llm_template_query(sess, template, passage, api_key)
